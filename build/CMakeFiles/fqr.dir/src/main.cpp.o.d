@@ -172,4 +172,5 @@ CMakeFiles/fqr.dir/src/main.cpp.o: /home/carbona/fqr/src/main.cpp \
  /usr/include/c++/16/ext/aligned_buffer.h \
  /usr/include/c++/16/bits/align.h /usr/include/c++/16/bits/fs_dir.h \
  /usr/include/c++/16/bits/fs_ops.h \
+ /home/carbona/fqr/src/../include/file_packet.hpp \
  /home/carbona/fqr/src/../include/qr.hpp /usr/include/c++/16/iostream

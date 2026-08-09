@@ -1,33 +1,32 @@
-
 #include "../include/file_io.hpp"
+#include "../include/file_packet.hpp"
 #include "../include/qr.hpp"
 
+#include <iomanip>
+#include <sstream>
 #include <cstdint>
 #include <filesystem>
 #include <iostream>
 #include <vector>
 
+std::string make_qr_filename(std::size_t index)
+{
+    std::ostringstream oss;
+    oss << "qr_"
+        << std::setw(4) << std::setfill('0')
+        << index << ".pgm";
+    return oss.str();
+}
+
 int main()
 {
     try
     {
-        // ============================================================
-        // Paths
-        // ============================================================
-
         const std::filesystem::path input_path =
             "test.png";
 
-        const std::filesystem::path qr_path =
-            "qr.pgm";
-
         const std::filesystem::path decoded_path =
             "decode.png";
-
-
-        // ============================================================
-        // 1. Check input file
-        // ============================================================
 
         if (!file_io::file_exists(input_path))
         {
@@ -44,79 +43,102 @@ int main()
             << input_path
             << '\n';
 
-
-        // ============================================================
-        // 2. Read PNG as raw binary
-        // ============================================================
-
         auto original =
             file_io::read_file(input_path);
 
         std::cout
-            << "Original PNG size: "
+            << "Original size: "
             << original.size()
             << " bytes\n";
 
-
-        // ============================================================
-        // 3. Encode PNG bytes into QR
-        // ============================================================
-
         std::cout
-            << "Encoding PNG into QR...\n";
-
-        qr::encode(
-            original,
-            qr_path
-        );
-
-        std::cout
-            << "QR generated: "
-            << qr_path
-            << '\n';
-
-
-        // ============================================================
-        // 4. Decode QR back into PNG bytes
-        // ============================================================
-
-        std::cout
-            << "Decoding QR...\n";
-
-        auto decoded =
-            qr::decode(qr_path);
-
-        std::cout
-            << "Decoded data size: "
-            << decoded.size()
+            << "\nChunk size: "
+            << file_packet::QR_CHUNK_SIZE
             << " bytes\n";
 
+        auto packets =
+            file_packet::create_packets(
+                original,
+                "image/png"
+            );
 
-        // ============================================================
-        // 5. Verify binary data
-        // ============================================================
+        std::cout
+            << "Total chunks: "
+            << packets.size()
+            << "\n\n";
 
-        if (original != decoded)
+        std::cout
+            << "Encoding:\n";
+
+        for (std::size_t i = 0; i < packets.size(); ++i)
         {
-            std::cerr
-                << "ERROR: decoded data does not "
-                   "match the original PNG.\n";
+            auto serialized =
+                file_packet::serialize(packets[i]);
 
-            return 1;
+            const std::string qr_filename =
+                make_qr_filename(i);
+
+            qr::encode(
+                serialized,
+                qr_filename
+            );
+
+            std::cout
+                << "QR " << (i + 1) << "/"
+                << packets.size()
+                << " generated\n";
         }
 
         std::cout
-            << "QR round trip successful.\n";
+            << "\nDecoding:\n";
 
+        std::vector<file_packet::FilePacket> decoded_packets;
+        decoded_packets.reserve(packets.size());
 
-        // ============================================================
-        // 6. Write decoded bytes as decode.png
-        // ============================================================
+        for (std::size_t i = 0; i < packets.size(); ++i)
+        {
+            const std::string qr_filename =
+                make_qr_filename(i);
+
+            auto decoded_bytes =
+                qr::decode(qr_filename);
+
+            auto packet =
+                file_packet::deserialize(decoded_bytes);
+
+            decoded_packets.push_back(std::move(packet));
+
+            std::cout
+                << "QR " << (i + 1) << "/"
+                << packets.size()
+                << " decoded\n";
+        }
+
+        std::cout
+            << "\nReconstructing file...\n";
+
+        auto reconstructed =
+            file_packet::reconstruct_file(
+                std::move(decoded_packets)
+            );
+
+        std::cout
+            << "\nReconstructed size: "
+            << reconstructed.size()
+            << " bytes\n";
+
+        const bool match = (original == reconstructed);
+
+        std::cout
+            << "Original/reconstructed match: "
+            << std::boolalpha
+            << match
+            << '\n';
 
         bool written =
             file_io::write_file(
                 decoded_path,
-                decoded
+                reconstructed
             );
 
         if (!written)
@@ -128,26 +150,21 @@ int main()
         }
 
         std::cout
-            << "Decoded PNG written: "
+            << "Decoded file written: "
             << decoded_path
             << '\n';
 
-
-        // ============================================================
-        // 7. Final result
-        // ============================================================
-
         std::cout
             << "\n========================================\n"
-            << "       PNG QR ROUND TRIP SUCCESS\n"
-            << "========================================\n"
-            << "Original : " << input_path << '\n'
-            << "QR       : " << qr_path << '\n'
-            << "Decoded  : " << decoded_path << '\n'
-            << "Size     : " << original.size() << " bytes\n"
+            << (match ? "FULL ROUND TRIP SUCCESS" : "FULL ROUND TRIP FAILURE")
+            << "\n========================================\n"
+            << "Input     : " << input_path << '\n'
+            << "Decoded   : " << decoded_path << '\n'
+            << "Size      : " << original.size() << " bytes\n"
+            << "Chunks    : " << packets.size() << '\n'
             << "========================================\n";
 
-        return 0;
+        return match ? 0 : 1;
     }
     catch (const std::exception& e)
     {
