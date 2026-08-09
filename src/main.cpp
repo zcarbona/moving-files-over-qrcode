@@ -1,54 +1,136 @@
 #include "../include/file_io.hpp"
-#include <format>
-#include <string>
+#include "../include/file_packet.hpp"
+
+#include <cstdint>
+#include <iomanip>
 #include <iostream>
+#include <vector>
 
 int main()
 {
-    bool exists = file_io::file_exists("../test.txt");
-    //boolalpha to convert 1 to true
-    std::cout << std::boolalpha << "File exists: "<< exists << '\n';
+    const std::filesystem::path input_path = "../test.txt";
+    const std::filesystem::path output_path = "../test_copy.txt";
 
-    auto data = file_io::read_file("../test.txt");
-    //std::hex to convert to Hexadecimal, std::showbase to show 0x before the number
-    std::cout << "File binary: \n"<<std::hex;
-    //for each byte in data, print the byte as an hexadecimal number
+    // ============================================================
+    // 1. Check if the file exists
+    // ============================================================
+
+    bool exists = file_io::file_exists(input_path);
+
+    std::cout << std::boolalpha
+              << "File exists: "
+              << exists
+              << '\n';
+
+    if (!exists)
+    {
+        std::cerr << "Input file does not exist.\n";
+        return 1;
+    }
+
+
+    // ============================================================
+    // 2. Read the original file
+    // ============================================================
+
+    auto data = file_io::read_file(input_path);
+
+    std::cout << "Original file size: "
+              << data.size()
+              << " bytes\n";
+
+
+    // ============================================================
+    // 3. Display original file bytes
+    // ============================================================
+
+    std::cout << "Original file binary:\n";
+
     for (const auto& byte : data)
     {
-        std::cout << static_cast<int>(byte) << ' ';
+        std::cout
+            << std::hex
+            << std::setw(2)
+            << std::setfill('0')
+            << static_cast<int>(byte)
+            << ' ';
     }
-    std::cout << '\n';
+
+    std::cout << std::dec << "\n\n";
 
 
+    // ============================================================
+    // 4. Create FilePacket
+    // ============================================================
 
-    
-    // Convert user input into binary bytes
-    std::string text;
+    file_packet::FilePacket original;
 
-    std::cout << "Enter text to write to file: ";
-    std::getline(std::cin, text);
+    original.filetype = "text/plain";
+    original.filesize = data.size();
+    original.data = data;
 
-    std::vector<std::uint8_t> bytes(
-        text.begin(),
-        text.end()
-    );
 
-    // Display the bytes as decimal values
-    for (const auto& byte : bytes)
+    // ============================================================
+    // 5. Serialize FilePacket -> binary vector
+    // ============================================================
+
+    auto serialized = file_packet::serialize(original);
+
+    std::cout << "Serialized packet size: "
+              << serialized.size()
+              << " bytes\n";
+
+
+    // ============================================================
+    // 6. Deserialize binary vector -> FilePacket
+    // ============================================================
+
+    auto restored = file_packet::deserialize(serialized);
+
+    std::cout << "Restored file type: "
+              << restored.filetype
+              << '\n';
+
+    std::cout << "Restored file size: "
+              << restored.filesize
+              << " bytes\n";
+
+
+    // ============================================================
+    // 7. Verify the packet
+    // ============================================================
+
+    bool packet_valid =
+        original.filetype == restored.filetype &&
+        original.filesize == restored.filesize &&
+        original.data == restored.data;
+
+    std::cout << std::boolalpha
+              << "Packet round trip valid: "
+              << packet_valid
+              << "\n\n";
+
+    if (!packet_valid)
     {
-        std::cout << static_cast<int>(byte) << ' ';
+        std::cerr << "Packet round trip failed.\n";
+        return 1;
     }
 
-    std::cout << '\n';
 
-    // Write the bytes to a file
-    bool validate = file_io::write_file(
-        "../test_copy.txt",
-        bytes
+    // ============================================================
+    // 8. Write restored data to a new file
+    // ============================================================
+
+    bool written = file_io::write_file(
+        output_path,
+        restored.data
     );
 
     std::cout << std::boolalpha
-            << "File written: "
-            << validate
-            << '\n';
+              << "File written: "
+              << written
+              << '\n';
+
+
+    return 0;
 }
