@@ -173,4 +173,13 @@ CMakeFiles/fqr.dir/src/main.cpp.o: /home/carbona/fqr/src/main.cpp \
  /usr/include/c++/16/bits/align.h /usr/include/c++/16/bits/fs_dir.h \
  /usr/include/c++/16/bits/fs_ops.h \
  /home/carbona/fqr/src/../include/file_packet.hpp \
- /home/carbona/fqr/src/../include/qr.hpp /usr/include/c++/16/iostream
+ /home/carbona/fqr/src/../include/qr.hpp /usr/include/c++/16/iostream \
+ /usr/include/c++/16/algorithm /usr/include/c++/16/bits/stl_algo.h \
+ /usr/include/c++/16/bits/algorithmfwd.h \
+ /usr/include/c++/16/bits/stl_heap.h \
+ /usr/include/c++/16/bits/uniform_int_dist.h \
+ /usr/include/c++/16/bits/stl_tempbuf.h \
+ /usr/include/c++/16/bits/ranges_algo.h \
+ /usr/include/c++/16/bits/ranges_algobase.h \
+ /usr/include/c++/16/pstl/glue_algorithm_defs.h \
+ /usr/include/c++/16/pstl/execution_defs.h
