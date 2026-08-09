@@ -1,10 +1,11 @@
-#include "file_io.hpp"
+#include "../include/file_io.hpp"
 
 #include <fstream>
 #include <stdexcept>
 #include <vector>
 
-namespace fqr::file {
+namespace file_io
+{ 
 
 bool file_exists(const std::filesystem::path& path)
 {
