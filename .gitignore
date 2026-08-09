@@ -106,3 +106,5 @@ CMakeUserPresets.json
 Thumbs.db
 desktop.ini
 ```
+build/
+.vscode/
