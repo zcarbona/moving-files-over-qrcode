@@ -1,0 +1,1 @@
+/usr/bin/c++ -Wl,--dependency-file=CMakeFiles/fqr.dir/link.d CMakeFiles/fqr.dir/src/main.cpp.o CMakeFiles/fqr.dir/src/file_io.cpp.o CMakeFiles/fqr.dir/src/file_packet.cpp.o CMakeFiles/fqr.dir/src/qr.cpp.o -o fqr  -lZXing

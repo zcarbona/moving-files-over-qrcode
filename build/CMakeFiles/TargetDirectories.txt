@@ -1,0 +1,3 @@
+/home/carbona/fqr/build/CMakeFiles/fqr.dir
+/home/carbona/fqr/build/CMakeFiles/edit_cache.dir
+/home/carbona/fqr/build/CMakeFiles/rebuild_cache.dir

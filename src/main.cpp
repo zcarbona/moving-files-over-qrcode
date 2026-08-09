@@ -1,136 +1,161 @@
+
 #include "../include/file_io.hpp"
-#include "../include/file_packet.hpp"
+#include "../include/qr.hpp"
 
 #include <cstdint>
-#include <iomanip>
+#include <filesystem>
 #include <iostream>
 #include <vector>
 
 int main()
 {
-    const std::filesystem::path input_path = "../test.txt";
-    const std::filesystem::path output_path = "../test_copy.txt";
-
-    // ============================================================
-    // 1. Check if the file exists
-    // ============================================================
-
-    bool exists = file_io::file_exists(input_path);
-
-    std::cout << std::boolalpha
-              << "File exists: "
-              << exists
-              << '\n';
-
-    if (!exists)
+    try
     {
-        std::cerr << "Input file does not exist.\n";
-        return 1;
-    }
+        // ============================================================
+        // Paths
+        // ============================================================
+
+        const std::filesystem::path input_path =
+            "test.png";
+
+        const std::filesystem::path qr_path =
+            "qr.pgm";
+
+        const std::filesystem::path decoded_path =
+            "decode.png";
 
 
-    // ============================================================
-    // 2. Read the original file
-    // ============================================================
+        // ============================================================
+        // 1. Check input file
+        // ============================================================
 
-    auto data = file_io::read_file(input_path);
+        if (!file_io::file_exists(input_path))
+        {
+            std::cerr
+                << "Input file does not exist: "
+                << input_path
+                << '\n';
 
-    std::cout << "Original file size: "
-              << data.size()
-              << " bytes\n";
+            return 1;
+        }
 
-
-    // ============================================================
-    // 3. Display original file bytes
-    // ============================================================
-
-    std::cout << "Original file binary:\n";
-
-    for (const auto& byte : data)
-    {
         std::cout
-            << std::hex
-            << std::setw(2)
-            << std::setfill('0')
-            << static_cast<int>(byte)
-            << ' ';
+            << "Input file: "
+            << input_path
+            << '\n';
+
+
+        // ============================================================
+        // 2. Read PNG as raw binary
+        // ============================================================
+
+        auto original =
+            file_io::read_file(input_path);
+
+        std::cout
+            << "Original PNG size: "
+            << original.size()
+            << " bytes\n";
+
+
+        // ============================================================
+        // 3. Encode PNG bytes into QR
+        // ============================================================
+
+        std::cout
+            << "Encoding PNG into QR...\n";
+
+        qr::encode(
+            original,
+            qr_path
+        );
+
+        std::cout
+            << "QR generated: "
+            << qr_path
+            << '\n';
+
+
+        // ============================================================
+        // 4. Decode QR back into PNG bytes
+        // ============================================================
+
+        std::cout
+            << "Decoding QR...\n";
+
+        auto decoded =
+            qr::decode(qr_path);
+
+        std::cout
+            << "Decoded data size: "
+            << decoded.size()
+            << " bytes\n";
+
+
+        // ============================================================
+        // 5. Verify binary data
+        // ============================================================
+
+        if (original != decoded)
+        {
+            std::cerr
+                << "ERROR: decoded data does not "
+                   "match the original PNG.\n";
+
+            return 1;
+        }
+
+        std::cout
+            << "QR round trip successful.\n";
+
+
+        // ============================================================
+        // 6. Write decoded bytes as decode.png
+        // ============================================================
+
+        bool written =
+            file_io::write_file(
+                decoded_path,
+                decoded
+            );
+
+        if (!written)
+        {
+            std::cerr
+                << "Failed to write decoded PNG.\n";
+
+            return 1;
+        }
+
+        std::cout
+            << "Decoded PNG written: "
+            << decoded_path
+            << '\n';
+
+
+        // ============================================================
+        // 7. Final result
+        // ============================================================
+
+        std::cout
+            << "\n========================================\n"
+            << "       PNG QR ROUND TRIP SUCCESS\n"
+            << "========================================\n"
+            << "Original : " << input_path << '\n'
+            << "QR       : " << qr_path << '\n'
+            << "Decoded  : " << decoded_path << '\n'
+            << "Size     : " << original.size() << " bytes\n"
+            << "========================================\n";
+
+        return 0;
     }
-
-    std::cout << std::dec << "\n\n";
-
-
-    // ============================================================
-    // 4. Create FilePacket
-    // ============================================================
-
-    file_packet::FilePacket original;
-
-    original.filetype = "text/plain";
-    original.filesize = data.size();
-    original.data = data;
-
-
-    // ============================================================
-    // 5. Serialize FilePacket -> binary vector
-    // ============================================================
-
-    auto serialized = file_packet::serialize(original);
-
-    std::cout << "Serialized packet size: "
-              << serialized.size()
-              << " bytes\n";
-
-
-    // ============================================================
-    // 6. Deserialize binary vector -> FilePacket
-    // ============================================================
-
-    auto restored = file_packet::deserialize(serialized);
-
-    std::cout << "Restored file type: "
-              << restored.filetype
-              << '\n';
-
-    std::cout << "Restored file size: "
-              << restored.filesize
-              << " bytes\n";
-
-
-    // ============================================================
-    // 7. Verify the packet
-    // ============================================================
-
-    bool packet_valid =
-        original.filetype == restored.filetype &&
-        original.filesize == restored.filesize &&
-        original.data == restored.data;
-
-    std::cout << std::boolalpha
-              << "Packet round trip valid: "
-              << packet_valid
-              << "\n\n";
-
-    if (!packet_valid)
+    catch (const std::exception& e)
     {
-        std::cerr << "Packet round trip failed.\n";
+        std::cerr
+            << "ERROR: "
+            << e.what()
+            << '\n';
+
         return 1;
     }
-
-
-    // ============================================================
-    // 8. Write restored data to a new file
-    // ============================================================
-
-    bool written = file_io::write_file(
-        output_path,
-        restored.data
-    );
-
-    std::cout << std::boolalpha
-              << "File written: "
-              << written
-              << '\n';
-
-
-    return 0;
 }
