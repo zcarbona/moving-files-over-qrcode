@@ -19,7 +19,7 @@ The application divides file data into packets, encodes the packets into QR code
 
 ---
 
-## Project Structure
+# Project Structure
 
 ```text
 fqr/
@@ -194,11 +194,171 @@ The executable will be:
 build/fqr
 ```
 
-Run it with:
+---
+
+# Running FQR
+
+FQR uses command-line arguments to select between encoding and decoding.
+
+The general syntax is:
+
+```text
+fqr -e <file>
+fqr -d <directory> <extension>
+```
+
+The first argument must be either:
+
+* `-e` — encode a file
+* `-d` — decode QR codes
+
+---
+
+## Encode
+
+To encode a file:
+
+### Linux / macOS
+
+```bash
+./build/fqr -e "path/to/file"
+```
+
+Example:
+
+```bash
+./build/fqr -e src/test.png
+```
+
+### Windows
+
+```bat
+build\fqr.exe -e "path\to\file"
+```
+
+Example:
+
+```bat
+build\fqr.exe -e "C:\Users\Ali\Pictures\test.png"
+```
+
+The file extension is automatically detected from the input file.
+
+For example:
+
+```bash
+./build/fqr -e image.png
+```
+
+automatically uses:
+
+```text
+.png
+```
+
+as the file type.
+
+No additional extension argument is required when encoding.
+
+---
+
+## Decode
+
+To decode QR codes:
+
+### Linux / macOS
+
+```bash
+./build/fqr -d "path/to/qr_codes" ".extension"
+```
+
+Example:
+
+```bash
+./build/fqr -d "./qr_codes" ".png"
+```
+
+### Windows
+
+```bat
+build\fqr.exe -d "path\to\qr_codes" ".extension"
+```
+
+Example:
+
+```bat
+build\fqr.exe -d ".\qr_codes" ".png"
+```
+
+The extension argument tells FQR what extension to use for the reconstructed file.
+
+For example:
+
+```bash
+./build/fqr -d ./qr_codes .png
+```
+
+produces a reconstructed file using:
+
+```text
+.png
+```
+
+---
+
+# Command-Line Arguments
+
+| Command | Arguments                 | Description                                               |
+| ------- | ------------------------- | --------------------------------------------------------- |
+| `-e`    | `<file>`                  | Encode the specified file into QR codes                   |
+| `-d`    | `<directory> <extension>` | Decode QR codes from a directory and reconstruct the file |
+
+### Examples
+
+Encode:
+
+```bash
+./build/fqr -e image.png
+```
+
+Decode:
+
+```bash
+./build/fqr -d ./qr_codes .png
+```
+
+Windows:
+
+```bat
+build\fqr.exe -e image.png
+build\fqr.exe -d .\qr_codes .png
+```
+
+---
+
+# Invalid Usage
+
+The program requires an operation and its required arguments.
+
+These are invalid:
 
 ```bash
 ./build/fqr
 ```
+
+```bash
+./build/fqr image.png
+```
+
+```bash
+./build/fqr -x image.png
+```
+
+```bash
+./build/fqr -d ./qr_codes
+```
+
+The program will print the usage information and exit with an error.
 
 ---
 
@@ -339,38 +499,6 @@ Provides the QR-code functionality backed by ZXing-C++.
 `main.cpp`
 
 Provides the application's command-line entry point and connects the different components.
-
----
-
-# Usage
-
-The application supports encoding and decoding operations.
-
-## Encode
-
-```bash
-./fqr -e "path/to/file"
-```
-
-On Windows:
-
-```bat
-fqr.exe -e "path\to\file"
-```
-
-## Decode
-
-```bash
-./fqr -d "path/to/input"
-```
-
-On Windows:
-
-```bat
-fqr.exe -d "path\to\input"
-```
-
-> The exact input/output behavior depends on the current implementation of the encoder and decoder modules.
 
 ---
 
