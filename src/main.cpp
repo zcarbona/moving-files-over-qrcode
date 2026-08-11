@@ -20,7 +20,7 @@ int main(int argc, char* argv[])
 {
     try
     {
-        if (argc != 3)
+        if (argc < 3 || (std::string(argv[1]) != "-e" && std::string(argv[1]) != "-d"))
         {
             print_usage(argv[0]);
             return 1;
@@ -29,15 +29,14 @@ int main(int argc, char* argv[])
         const std::string mode = argv[1];
         const std::filesystem::path path = argv[2];
         const std::string filetype = path.extension().string();
-        std::string extention;
 
         if (mode == "-e")
             return encode_file(path, filetype);
 
         if (mode == "-d")
         {
-            std::cout<<"please enter file extention:\n";
-            std::cin>>extention;
+            const std::string extention = argv[3];
+
             return decode_files(path,extention);
         }
         

@@ -9,7 +9,7 @@
 #include <string>
 #include <vector>
 
-int decode_files(const std::filesystem::path& input_path, std::string& extention)
+int decode_files(const std::filesystem::path& input_path,const std::string& extention)
 {
     if (!std::filesystem::exists(input_path))
     {
