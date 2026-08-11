@@ -9,7 +9,7 @@
 #include <string>
 #include <vector>
 
-int decode_files(const std::filesystem::path& input_path)
+int decode_files(const std::filesystem::path& input_path, std::string& extention)
 {
     if (!std::filesystem::exists(input_path))
     {
@@ -111,6 +111,8 @@ int decode_files(const std::filesystem::path& input_path)
 
     std::filesystem::path output_path =
         input_path / "decoded_file";
+    
+        output_path += extention;
 
     bool written =
         file_io::write_file(

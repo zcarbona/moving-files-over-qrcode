@@ -2,4 +2,4 @@
 
 #include <filesystem>
 
-int encode_file(const std::filesystem::path& input_path);
+int encode_file(const std::filesystem::path& input_path,const std::string& filetype);

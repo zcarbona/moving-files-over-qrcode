@@ -28,13 +28,19 @@ int main(int argc, char* argv[])
 
         const std::string mode = argv[1];
         const std::filesystem::path path = argv[2];
+        const std::string filetype = path.extension().string();
+        std::string extention;
 
         if (mode == "-e")
-            return encode_file(path);
+            return encode_file(path, filetype);
 
         if (mode == "-d")
-            return decode_files(path);
-
+        {
+            std::cout<<"please enter file extention:\n";
+            std::cin>>extention;
+            return decode_files(path,extention);
+        }
+        
         std::cerr
             << "Unknown option: "
             << mode

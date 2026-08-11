@@ -27,7 +27,7 @@ std::string make_qr_filename(std::size_t index)
 }
 }
 
-int encode_file(const std::filesystem::path& input_path)
+int encode_file(const std::filesystem::path& input_path,const std::string& filetype)
 {
     if (!file_io::file_exists(input_path))
     {
@@ -59,7 +59,7 @@ int encode_file(const std::filesystem::path& input_path)
     auto packets =
         file_packet::create_packets(
             original,
-            "image/png"
+            filetype
         );
 
     std::cout
