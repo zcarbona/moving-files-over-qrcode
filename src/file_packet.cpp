@@ -1,7 +1,11 @@
 #include "../include/file_packet.hpp"
 
 #include <algorithm>
+#include <cstdint>
 #include <stdexcept>
+#include <vector>
+
+#include "../include/crypto.hpp"
 
 namespace file_packet
 {
@@ -52,6 +56,25 @@ std::vector<std::uint8_t> serialize(const FilePacket& packet)
 
     write_u64(packet.filesize);
 
+    result.push_back(
+        static_cast<std::uint8_t>(packet.encryption_enabled ? 1 : 0)
+    );
+
+    if (packet.encryption_enabled)
+    {
+        result.insert(
+            result.end(),
+            packet.salt.begin(),
+            packet.salt.end()
+        );
+
+        result.insert(
+            result.end(),
+            packet.nonce.begin(),
+            packet.nonce.end()
+        );
+    }
+
     result.insert(
         result.end(),
         packet.data.begin(),
@@ -65,11 +88,12 @@ std::vector<std::uint8_t> serialize(const FilePacket& packet)
 FilePacket deserialize(const std::vector<std::uint8_t>& data)
 {
     FilePacket packet;
+    packet.encryption_enabled = false;
 
-    const std::size_t min_size =
+    const std::size_t min_header_size =
         4 + 4 + 4 + 4 + 8;
 
-    if (data.size() < min_size)
+    if (data.size() < min_header_size)
     {
         throw std::runtime_error(
             "Invalid packet: packet is too small"
@@ -144,6 +168,42 @@ FilePacket deserialize(const std::vector<std::uint8_t>& data)
 
     read_u64(packet.filesize);
 
+    if (offset < data.size())
+    {
+        const std::uint8_t flag = data[offset];
+
+        if (flag == 0 || flag == 1)
+        {
+            packet.encryption_enabled = (flag == 1);
+            offset += 1;
+
+            if (packet.encryption_enabled)
+            {
+                if (offset + crypto::SALT_LEN + crypto::NONCE_LEN > data.size())
+                {
+                    throw std::runtime_error(
+                        "Invalid packet: insufficient data for "
+                        "encryption metadata"
+                    );
+                }
+
+                packet.salt.assign(
+                    data.begin() + offset,
+                    data.begin() + offset + crypto::SALT_LEN
+                );
+
+                offset += crypto::SALT_LEN;
+
+                packet.nonce.assign(
+                    data.begin() + offset,
+                    data.begin() + offset + crypto::NONCE_LEN
+                );
+
+                offset += crypto::NONCE_LEN;
+            }
+        }
+    }
+
     if (offset > data.size())
     {
         throw std::runtime_error(
@@ -162,7 +222,8 @@ FilePacket deserialize(const std::vector<std::uint8_t>& data)
 
 std::vector<FilePacket> create_packets(
     const std::vector<std::uint8_t>& file_data,
-    const std::string& filetype
+    const std::string& filetype,
+    const std::string& password
 )
 {
     if (file_data.empty())
@@ -206,6 +267,7 @@ std::vector<FilePacket> create_packets(
         packet.total_chunks = static_cast<std::uint32_t>(total_chunks);
         packet.filetype = filetype;
         packet.filesize = file_size;
+        packet.encryption_enabled = false;
 
         const std::size_t start = i * QR_CHUNK_SIZE;
         const std::size_t remaining =
@@ -325,6 +387,37 @@ std::vector<std::uint8_t> reconstruct_file(
     }
 
     return result;
+}
+
+
+void decrypt_packet_data(
+    FilePacket& packet,
+    const std::string& password
+)
+{
+    if (!packet.encryption_enabled || password.empty())
+    {
+        return;
+    }
+
+    std::vector<std::uint8_t> hex_data =
+        crypto::decrypt_chunk(
+            packet.data,
+            password,
+            packet.salt,
+            packet.nonce
+        );
+
+    std::string hex_str(
+        reinterpret_cast<const char*>(hex_data.data()),
+        hex_data.size()
+    );
+
+    packet.data = crypto::hex_decode(hex_str);
+
+    packet.encryption_enabled = false;
+    packet.salt.clear();
+    packet.nonce.clear();
 }
 
 } // namespace file_packet

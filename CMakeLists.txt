@@ -15,6 +15,7 @@ add_executable(fqr
     src/qr.cpp
     src/decoder.cpp
     src/encoder.cpp
+    src/crypto.cpp
 )
 
 target_include_directories(fqr
@@ -69,7 +70,11 @@ if(WIN32)
     target_link_libraries(fqr
         PRIVATE
             ZXing::ZXing
+            Sodium::Sodium
     )
+
+    list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
+    find_package(Sodium REQUIRED)
 else()
     # ------------------------------------------------------------------
     # Unix (Linux / macOS): use pkg-config to locate ZXing-C++.
@@ -91,5 +96,9 @@ else()
     target_link_libraries(fqr
         PRIVATE
             ${ZXING_LIBRARIES}
+            Sodium::Sodium
     )
+
+    list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
+    find_package(Sodium REQUIRED)
 endif()

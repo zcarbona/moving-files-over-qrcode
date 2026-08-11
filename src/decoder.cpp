@@ -2,7 +2,8 @@
 #include "../include/file_io.hpp"
 #include "../include/file_packet.hpp"
 #include "../include/qr.hpp"
-
+#include "../include/crypto.hpp"
+#include <sodium.h>
 #include <algorithm>
 #include <filesystem>
 #include <iostream>
@@ -68,6 +69,8 @@ int decode_files(const std::filesystem::path& input_path,const std::string& exte
         << qr_files.size()
         << " QR code(s).\n\n";
 
+    std::string password = crypto::ask_password("Enter password: ");
+
     std::vector<file_packet::FilePacket> decoded_packets;
 
     decoded_packets.reserve(qr_files.size());
@@ -78,23 +81,48 @@ int decode_files(const std::filesystem::path& input_path,const std::string& exte
     {
         const auto& qr_filename = qr_files[i];
 
-        auto decoded_bytes =
-            qr::decode(qr_filename.string());
+        try
+        {
+            auto decoded_bytes =
+                qr::decode(qr_filename.string());
 
-        auto packet =
-            file_packet::deserialize(decoded_bytes);
+            auto packet =
+                file_packet::deserialize(decoded_bytes);
 
-        decoded_packets.push_back(
-            std::move(packet)
-        );
+            file_packet::decrypt_packet_data(
+                packet,
+                password
+            );
 
-        std::cout
-            << "QR " << (i + 1) << "/"
-            << qr_files.size()
-            << " decoded: "
-            << qr_filename.filename()
-            << '\n';
+            decoded_packets.push_back(
+                std::move(packet)
+            );
+
+            std::cout
+                << "QR " << (i + 1) << "/"
+                << qr_files.size()
+                << " decoded: "
+                << qr_filename.filename()
+                << '\n';
+        }
+        catch (const std::exception& e)
+        {
+            std::cerr
+                << "Error decoding QR "
+                << (i + 1)
+                << " ("
+                << qr_filename.filename()
+                << "): "
+                << e.what()
+                << '\n';
+
+            sodium_memzero(password.data(), password.size());
+
+            return 1;
+        }
     }
+
+    sodium_memzero(password.data(), password.size());
 
     std::cout
         << "\nReconstructing file...\n";

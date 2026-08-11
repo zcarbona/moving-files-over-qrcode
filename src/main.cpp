@@ -1,5 +1,6 @@
 #include "../include/encoder.hpp"
 #include "../include/decoder.hpp"
+#include "../include/crypto.hpp"
 
 #include <filesystem>
 #include <iostream>
@@ -18,6 +19,8 @@ void print_usage(const char* program)
 
 int main(int argc, char* argv[])
 {
+    crypto::initialize();
+
     try
     {
         if (argc < 3 || (std::string(argv[1]) != "-e" && std::string(argv[1]) != "-d"))

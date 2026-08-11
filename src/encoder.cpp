@@ -2,13 +2,14 @@
 #include "../include/file_io.hpp"
 #include "../include/file_packet.hpp"
 #include "../include/qr.hpp"
+#include "../include/crypto.hpp"
 
+#include <sodium.h>
 #include <filesystem>
 #include <iostream>
 #include <iomanip>
 #include <sstream>
 #include <string>
-
 
 
 namespace
@@ -67,10 +68,47 @@ int encode_file(const std::filesystem::path& input_path,const std::string& filet
         << packets.size()
         << "\n\n";
 
+    std::string password;
+
+    std::cout << "Enter password: " << std::flush;
+
+    password = crypto::ask_password("");
+
+    bool encrypt = !password.empty();
+
+    if (encrypt)
+    {
+        std::cout
+            << "Encryption enabled.\n\n";
+    }
+
     std::cout << "Encoding:\n";
 
     for (std::size_t i = 0; i < packets.size(); ++i)
     {
+        file_packet::FilePacket& packet = packets[i];
+
+        if (encrypt)
+        {
+            std::string hex_data =
+                crypto::hex_encode(packet.data);
+
+            std::vector<std::uint8_t> salt;
+            std::vector<std::uint8_t> nonce;
+
+            packet.data =
+                crypto::encrypt_chunk(
+                    hex_data,
+                    password,
+                    salt,
+                    nonce
+                );
+
+            packet.encryption_enabled = true;
+            packet.salt = std::move(salt);
+            packet.nonce = std::move(nonce);
+        }
+
         auto serialized =
             file_packet::serialize(packets[i]);
 
@@ -89,6 +127,8 @@ int encode_file(const std::filesystem::path& input_path,const std::string& filet
             << qr_filename
             << '\n';
     }
+
+    sodium_memzero(password.data(), password.size());
 
     std::cout
         << "\nEncoding complete.\n"
