@@ -12,6 +12,8 @@ void print_usage(const char* program)
         << "Usage:\n"
         << "  " << program << " -e <file>\n"
         << "  " << program << " -d <directory>\n\n"
+        <<"For Windows Users During Decoding:\n"
+        << "  " << program << "-d <directory> <extention>"
         << "Examples:\n"
         << "  " << program << " -e image.png\n"
         << "  " << program << " -d ./qr_codes\n";

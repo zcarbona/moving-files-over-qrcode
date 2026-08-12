@@ -3,7 +3,7 @@
 # Build directories
 # ============================================================
 
-build/
+#build/
 build-*/
 cmake-build-*/
 CMakeFiles/
